@@ -1,15 +1,15 @@
 
-# ASR定义
+# 1. ASR定义
 ## 定义：
 + **什么是语音识别？**  
   输入语音信号其对应的输出文本序列。
 + **如何形式化这个问题？**  
-  现假设长度为D的语音/特征序列为$S_D=(s_1, s_2, s_3,…s_d)$，单词/音素序列集合为W。需要知道语音对应的最佳单词/音素序列$W^*_L(w_1, w_2, w_3,…w_l)$。据此可以建立概率模型：  
-  $$W^*=argmax\{P(W|S)\}$$  
+  现假设长度为D的语音/特征序列为$S_D = (s_1, s_2, s_3,…s_d)$，单词/音素序列集合为W。需要知道语音对应的最佳单词/音素序列$W^*_L(w_1, w_2, w_3,…w_l)$。据此可以建立概率模型：  
+  $$W^* = argmax\{P(W|S)\}$$  
   根据贝叶斯公式：
-  $$W^*=argmax\frac{P(S|W)P(W)}{P(S)}$$  
+  $$W^* = argmax\frac{P(S|W)P(W)}{P(S)}$$  
   因为$S$已知所以$P(S)$为常量：  
-  $$W^*=argmax{P(S|W)P(W)}$$
+  $$W^* = argmax{P(S|W)P(W)}$$
 ## 建模：
   + **目标是什么？**  
     需要得到条件概率概率(似然概率)$P(S|W)$和先验概率$P(W)$的最大乘积。  
@@ -25,41 +25,41 @@
         判别模型则直接对$P(W|S)$建模需要除以状态的先验概率得到似然度。  
         [生成模型和判别模型的对比](https://www.cnblogs.com/kemaswill/p/3427422.html)
 
-# GMM
+# 2. GMM
 ## 原理：
 + **定义**  
   高斯混合模型是单一高斯概率密度函数的延伸，由多个高斯概率密度函数组合而成，是将变量分布分解为若干基于高斯概率密度函数分布的统计模型。由于混合高斯分布的多模态$M$，因此其足以描述显示出多模态性质的物理数据(比如语音特征的主要分量)。其原理类似于三角函数的组合拟合任意曲线。  
   假定其符合正太分布，$\mu$为均值，$\sigma^2$为方差。  
   其一维密度函数为：  
-  $$p(x)=\frac{1}{(2\pi)^\frac{1}{2}\sigma}exp[-\frac{1}{2}(\frac{x-\mu}{\sigma})^2]=N(x;\mu,\sigma^2) \\ (-\infin,+\infin;\sigma^2)$$
+  $$p(x) = \frac{1}{(2\pi)^\frac{1}{2}\sigma}exp[-\frac{1}{2}(\frac{x-\mu}{\sigma})^2] = N(x;\mu,\sigma^2) \\ (-\infin,+\infin;\sigma^2)$$
   高维(D维)密度函数为：  
-  $$p(x)=\frac{1}{(2\pi)^\frac{D}{2}|\Sigma|^\frac{1}{2}}exp[-\frac{1}{2}(x-\mu)^T\Sigma^-1(x-\mu)]=N(x;\mu,\Sigma)$$
+  $$p(x) = \frac{1}{(2\pi)^\frac{D}{2}|\Sigma|^\frac{1}{2}}exp[-\frac{1}{2}(x-\mu)^T\Sigma^-1(x-\mu)] = N(x;\mu,\Sigma)$$
   混合高斯的概率密度函数为：
-  $$p(x)=\sum^M_m\frac{c_m}{(2\pi)^\frac{1}{2}\sigma_m}exp[-\frac{1}{2}(\frac{x-\mu_m}{\sigma_m})^2]=\sum^M_{m=1}N(x;\mu_m,\sigma^2_m)$$  
+  $$p(x) = \sum^M_m\frac{c_m}{(2\pi)^\frac{1}{2}\sigma_m}exp[-\frac{1}{2}(\frac{x-\mu_m}{\sigma_m})^2] = \sum^M_{m=1}N(x;\mu_m,\sigma^2_m)$$  
   其中混合权重为正实数，和为1：$\sum^M_{m=1}c_m=1$  
   将其扩展到多变量的多元混合高斯分布，其联合概率密度为：  
-  $$p(x)=\sum^M_{m=1}\frac{c_m}{(2\pi)^\frac{D}{2}|\Sigma_m|^\frac{1}{2}}exp[-\frac{1}{2}(x-\mu_m)^T\Sigma^{-1}_m(x-\mu_m)]=\Sigma^M_{m-1}c_mN(x;\mu_m,\Sigma_m)$$  
+  $$p(x) = \sum^M_{m=1}\frac{c_m}{(2\pi)^\frac{D}{2}|\Sigma_m|^\frac{1}{2}}exp[-\frac{1}{2}(x-\mu_m)^T\Sigma^{-1}_m(x-\mu_m)] = \Sigma^M_{m-1}c_mN(x;\mu_m,\Sigma_m)$$  
 
 ## 建模：  
   - 目标是什么？  
-    根据上述定义，目标已经很明确了，就是估计混合高斯分布包含的一些参数变量$\Theta=\{c_m,\mu_m,\Sigma_m\}$。  
+    根据上述定义，目标已经很明确了，就是估计混合高斯分布包含的一些参数变量$\Theta = \{c_m,\mu_m,\Sigma_m\}$。  
     这种通过训练样本估计概率密度，再通用统计决策进行类别鉴定的方法称为基于样本的两步贝叶斯决策。模型已确定，根据样本分布估计参数问题，一般采用极大似然估计或者贝叶斯估计。两者区别有些哲学含义，类似可知论和不可知论。但是考虑到计算量此处用极大似然估计。  
-    $$l(\theta)=P(X|\theta)=P(x_1,x_2,...,x_N)|\theta)=\Pi^N_{i=1}P(x_i|\theta)$$  
-    $$\theta_{MLP}=argmax\,\,l(\theta)\\
-    =argmax\,\,log\,l(\theta)\\
-    =argmax\,\,\sum logP(x_i|\theta)$$  
+    $$l(\theta) = P(X|\theta) = P(x_1,x_2,...,x_N)|\theta) = \Pi^N_{i=1}P(x_i|\theta)$$  
+    $$\theta_{MLP} = argmax\,\,l(\theta)\\
+     = argmax\,\,log\,l(\theta)\\
+     = argmax\,\,\sum logP(x_i|\theta)$$  
 
   - 如何训练？：  
     多数情况下极大似然参数$\theta$没有显式解，因此EM算法就出现了，EM算法是解决极大似然估计的迭代方法。  
     $X$是输入参数，$Z$是隐含变量，$\theta$是模型参数。  
     由于还有隐藏的观测值数据，根据边缘分布的定义：  
-    $$\theta=argmax\,\,\sum logP(x_i|\theta)=argmax\,\sum log\sum P(x_i,z_i|\theta)$$
+    $$\theta = argmax\,\,\sum logP(x_i|\theta) = argmax\,\sum log\sum P(x_i,z_i|\theta)$$
     EM公式:  
-    $$\theta^{(t+1)}=\mathop{argmax}\limits_{\theta}\int_Zlog\,P(X,Z|\theta).P(Z|X,\theta^{(t)})dZ$$   
+    $$\theta^{(t+1)} = \mathop{argmax}\limits_{\theta}\int_Zlog\,P(X,Z|\theta).P(Z|X,\theta^{(t)})dZ$$   
     E-step:  
     $log\,p(X,Z|\theta)$乘$p(Z|X,\theta^{(t)})$再对$Z$积分，即$E_{Z|X,\theta^{(t)}}[log\,p(X,Z|\theta)]$.  
     M-step:  
-    $$\theta^{(t+1)}=\mathop{argmax}\limits_{\theta}E_{Z|X,\theta^{(t)}}[log\,p(X,Z|\theta)]$$  
+    $$\theta^{(t+1)} = \mathop{argmax}\limits_{\theta}E_{Z|X,\theta^{(t)}}[log\,p(X,Z|\theta)]$$  
     证明过程可见[GMM的推导及实现](https://zhuanlan.zhihu.com/p/85338773)。  
 
   - 怎么使用？：  
@@ -74,55 +74,127 @@
     *  GMM没考虑语音的序列信息。
     *  GMM复杂度较高，对呈非线性或近似非线性地数据而言合适地模型仅需少量地参数，但是GMM需要的参数很多。
 
-# GMM-HMM
+# 3. GMM-HMM
 ## 原理：
-+ 定义：
-  HMM(Hidden Markov Model), 也称隐性马尔科夫模型，是一个概率模型，用来描述一个系统隐性状态的转移和隐性状态的表现概率，属于生成模型。针对语音特征的长度可变性，HMM能够很好地生成序列模型。
-+ 形式化：  
-  如图所示，HMM包含两个部分状态序列和观察序列。  
-  
-  隐马尔科夫模型由初始状态概率向量$\pi$、状态转移概率矩阵$A$ 以及观测概率矩阵$B$决定。因此隐马尔科夫模型$\lambda$可以用三元符号表示，即 ：$\lambda=(A,B,\pi)$ 。其中$A,B,\pi$称为隐马尔科夫模型的三要素：  
-    - 初始状态概率向量$\pi=[\pi_i],\,i=1,2,...,N$,其中，$\pi_i=P(q_1=i)$，代表t=1时状态$q$等于$i$的概率。   
-    - 状态转移概率矩阵$A=[a_{ij},\,i,j=1,2,...,N]$，$a_{ij}=P(q_t=j|q_{t-1}=i),\,\,\,i,j=1,2,...,N$，代表t时刻状态$q$为$i$情况下，转移到t+1时刻状态$q$为$j$的概率。
-    - 观测概率矩阵$B=[b_i(k)]$，$b_i(k)=P(o_t=v_k|q_t=i)$，代表t时刻状态$q$为$i$情况下，观测$o$为$v_k$的概率。如果概率密度是连续的，比如GMM-HMM，则$b_i(o_t)=\sum^M_{m=1}\frac{c_{i,m}}{(2\pi)^{D/2}|\Sigma_{i,m}|^{1/2}}exp[-\frac{1}{2}(o_t-\mu_{i,m})^T\Sigma^{-1}_{i,m}(o_t-\mu_{i,m})]$。
+  + 定义：
+    HMM(Hidden Markov Model), 也称隐性马尔科夫模型，是一个概率模型，用来描述一个系统隐性状态的转移和隐性状态的表现概率，属于生成模型。针对语音特征的长度可变性，HMM能够很好地生成序列模型。
+  + 形式化：  
+    如图所示，HMM包含两个部分状态序列和观察序列。  
+    
+    隐马尔科夫模型由初始状态概率向量$\pi$、状态转移概率矩阵$A$ 以及观测概率矩阵$B$决定。因此隐马尔科夫模型$\lambda$可以用三元符号表示，即 ：$\lambda = (A,B,\pi)$ 。其中$A,B,\pi$称为隐马尔科夫模型的三要素：  
+      - 初始状态概率向量$\pi = [\pi_i],\,i=1,2,...,N$,其中，$\pi_i = P(q_1=i)$，代表t=1时状态$q$等于$i$的概率。   
+      - 状态转移概率矩阵$A = [a_{ij},\,i,j=1,2,...,N]$，$a_{ij} = P(q_t = j|q_{t-1}=i),\,\,\,i,j=1,2,...,N$，代表t时刻状态$q$为$i$情况下，转移到t+1时刻状态$q$为$j$的概率。
+      - 观测概率矩阵$B = [b_i(k)]$，$b_i(k) = P(o_t = v_k|q_t=i)$，代表t时刻状态$q$为$i$情况下，观测$o$为$v_k$的概率。如果概率密度是连续的，比如GMM-HMM，则$b_i(o_t) = \sum^M_{m=1}\frac{c_{i,m}}{(2\pi)^{D/2}|\Sigma_{i,m}|^{1/2}}exp[-\frac{1}{2}(o_t-\mu_{i,m})^T\Sigma^{-1}_{i,m}(o_t-\mu_{i,m})]$。
 
-    - 状态转移概率矩阵和初始状态概率向量  确定了隐藏的马尔科夫链，生成不可观测的状态序列。
-    - 观测概率矩阵  确定了如何从状态生成观测，与状态序列一起确定了如何产生观测序列。
+      - 状态转移概率矩阵和初始状态概率向量  确定了隐藏的马尔科夫链，生成不可观测的状态序列。
+      - 观测概率矩阵  确定了如何从状态生成观测，与状态序列一起确定了如何产生观测序列。
 
-  从定义可知，隐马尔科夫模型做了两个基本假设：  
-  - 齐次性假设：即假设隐藏的马尔科夫链在任意时刻  的状态只依赖于它在前一时刻的状态，与其他时刻的状态和观测无关，也与时刻  无关，即：
-    $$P(i_t|i_{t-1},o_{t-1},...,i_1,o_1)=P(i_t|i_{t-1}),\,t=1,2,...,T$$
-  - 观测独立性假设，即假设任意时刻的观测值只依赖于该时刻的马尔科夫链的状态，与其他观测及状态无关，即：  
-    $$P(O_t|i_t,o_t,...,i_{t+1},o_{t+1}.i_t,i_{t-1}o_{t-1},...,i_1,o_1)=P(o_t|i_t),\,t=1,2,...,T$$
-+ 基本问题[推导过程](http://www.huaxiaozhuan.com/%E7%BB%9F%E8%AE%A1%E5%AD%A6%E4%B9%A0/chapters/15_HMM.html)：  
-  - 概率计算问题：给定模型$\lambda=(A,B,\pi)$和观测序列$O=o_1,o_2,...,o_T$，计算观测序列$O$出现的概率$P(O:\lambda)$。即：评估模型$\lambda$与观察序列$O$之间的匹配程度。可使用(Forward-Backword)前向后向算法。
-  - 学习问题：已知观测序列$O=o_1,o_2,...,o_T$，估计模型$\lambda=(A,B,\pi)$的参数，使得在该模型下观测序列概率$P(O:\lambda)$最大。即：用极大似然估计的方法估计参数。可使用(Viterbi)维特比算法。
-  - 预测问题（也称为解码问题）：已知模型$\lambda=(A,B,\pi)$和观测序列$O=o_1,o_2,...,o_T$， 求对给定观测序列的条件概率$P(I|O)$最大的状态序列$I=(i_1,i_2,...,i_T)$。即：给定观测序列，求最可能的对应的状态序列。可使用(Baum-Welch)鲍姆-韦尔奇算法  
-+ 在语音识别任务中，观测值为语音信号，隐藏状态为文字。解码问题的目标就是：根据观测的语音\特征信号$S_D$来推断最有可能的文字序列$W_L$。
+    从定义可知，隐马尔科夫模型做了两个基本假设：  
+    - 齐次性假设：即假设隐藏的马尔科夫链在任意时刻  的状态只依赖于它在前一时刻的状态，与其他时刻的状态和观测无关，也与时刻  无关，即：
+      $$P(i_t|i_{t-1},o_{t-1},...,i_1,o_1) = P(i_t|i_{t-1}),\,t=1,2,...,T$$
+    - 观测独立性假设，即假设任意时刻的观测值只依赖于该时刻的马尔科夫链的状态，与其他观测及状态无关，即：  
+      $$P(O_t|i_t,o_t,...,i_{t+1},o_{t+1}.i_t,i_{t-1}o_{t-1},...,i_1,o_1) = P(o_t|i_t),\,t=1,2,...,T$$
+  + 基本问题[推导过程](http://www.huaxiaozhuan.com/%E7%BB%9F%E8%AE%A1%E5%AD%A6%E4%B9%A0/chapters/15_HMM.html)：  
+    - 概率计算问题：给定模型$\lambda = (A,B,\pi)$和观测序列$O = o_1,o_2,...,o_T$，计算观测序列$O$出现的概率$P(O:\lambda)$。即：评估模型$\lambda$与观察序列$O$之间的匹配程度。可使用(Forward-Backword)前向后向算法。
+    - 学习问题：已知观测序列$O = o_1,o_2,...,o_T$，估计模型$\lambda = (A,B,\pi)$的参数，使得在该模型下观测序列概率$P(O:\lambda)$最大。即：用极大似然估计的方法估计参数。可使用(Baum-Welch)鲍姆-韦尔奇算法  
+    - 预测问题（也称为解码问题）：已知模型$\lambda = (A,B,\pi)$和观测序列$O = o_1,o_2,...,o_T$， 求对给定观测序列的条件概率$P(I|O)$最大的状态序列$I = (i_1,i_2,...,i_T)$。即：给定观测序列，求最可能的对应的状态序列。可使用(Viterbi)维特比算法。  
+  + 在语音识别任务中，观测值为语音信号，隐藏状态为文字。解码问题的目标就是：根据观测的语音\特征信号$S_D$来推断最有可能的文字序列$W_L$。
 
 ## 建模：
   + 目标是什么？     
-    HMM作为生成模型，参考上文GMM(GMM可视为HMM的特殊情况)，可以使用极大似然估计参数$\lambda=(A,B,\pi)$。HMM中连续观测向量的概率分布由概率密度函数描述(PDF)，GMM-HMM中概率密度函数为多元混合高斯分布。  
-    此处类似前文，将参数包含在$\theta$内，极大似然估计函数为$argmax\,\,\sum logP(x_i|\theta)$。同样模型存在隐藏变量$Z$，与GMM不同的是此处的$Z$符合马尔科夫链，因此观测变量和隐藏变量的联合概率分布函数为：
-    $$P(O,Q|\theta)=P(q_1|\pi)[\Pi^N_{n=2}P(q_n|q_{n-1},A)]\Pi^N_{m=1}P(o_m|q_{mv},B)$$  
+      HMM作为生成模型，参考上文GMM(GMM可视为HMM的特殊情况)，可以使用极大似然估计参数$\lambda = (A,B,\pi)$。HMM中连续观测向量的概率分布由概率密度函数描述(PDF)，GMM-HMM中概率密度函数为多元混合高斯分布。  
+      此处类似前文，将参数包含在$\theta$内，极大似然估计函数为$argmax\,\,\sum logP(x_i|\theta)$。同样模型存在隐藏变量，与GMM不同的是此处的隐藏变量符合马尔科夫链，因此观测变量和隐藏变量的联合概率分布函数为：
+      $$P(O,Q|\theta) = P(q_1|\pi)[\Pi^N_{n = 2}P(q_n|q_{n-1},A)]\Pi^N_{m=1}P(o_m|q_{mv},B)$$  
   + 如何训练？  
-    上文提到EM算法是种通用解决最大化似然度估计的方法，所以HMM也使用EM算法，但是当隐藏变量符合马尔科夫链的形式时，EM算法可以推到为Baum-Welch算法(EM算法的特例)。  
-    E-step:  
-    M-step:
+      当统计模型中含有隐藏的随机变量是，极大似然估计会比较困难，而EM算法比较有效率。是当隐藏变量符合马尔科夫链的形式时，EM算法可以推到为Baum-Welch算法(EM算法的特例)。  
+      假设$o^T_1$为观测序列(语音特征序列)，$q^T_1$为隐藏随机序列(HMM的状态序列)，定义完整数据$y = \{o^T_1,q^T_1\}$。此处的$\theta$和$\theta_0$分别代表当前及前一轮EM迭代中的HMM参数。
+    #### E-step:
+      $$Q(\theta|\theta_0) = \mathop{argmax}\limits_{\theta}\Sigma_{q^T_1}log\,P(q^T_1,o^T_1|\theta_0).P(q^T_1|o^T_1,\theta^{(t)})$$
+      其中联合概率$P(o^T_1,q^T_1) = P(o^T_1|q^T_1)P(q^T_1)$,参数$\theta$当作已知  
+        $$P(o^T_1|q^T_1) = \mathop\Pi\limits^T_{t=1}b_i(o_t)\\ = \mathop\Pi\limits^T_{t=1} \sum^M_{m=1}\frac{c_{i,m}}{(2\pi)^{D/2}|\sum_{i,m}|^{1/2}}exp[-\frac{1}{2}(o_t-\mu_{i,m})\sum^{-1}_{i,m}(o_t-\mu_{i,m})]$$
+        $$P(q^T_1) = \pi_{q1}\Pi^{T-1}_{t=1}a_{q_t,q_{t+1}}$$
+      为了方便计算将$log(P(o^T_1|q^T_1))$用符号$N_t(i)代替$(这就是状态$i$对应的对数高斯PDF)。所以$log P(q^T_1|o^T_1,\theta^{(t)}) = \sum\limits^T_{t=1}N_t(q_t)+\sum\limits^{T-1}_{t=1}log \, a_{q_t,q_{t+1}}$将其带入$Q(\theta|\theta_0)$中得到：
+        $$Q(\theta|\theta_0) = \sum_{q^T_1}P(q^T_1,o^T_1|\theta_0)\sum^T_{t=1}N_t(q_t) + \sum_{q^T_1}P(q^T_1,o^T_1|\theta_0)\sum^{T-1}_{t=1} log a_{q_tq_{t+1}}$$
+      将上式简化，前面一部分写为$Q_1(\theta|\theta_0)$后面一部分写为$Q_2(\theta|\theta_0)$
+      $$Q_1(\theta|\theta_0) = \sum^T_{i=1}\{\sum_{q^T_1}P(q^T_1,o^T_1|\theta_0)\sum^T_{t=1}N_t(q_t)\} \delta_{q_t,i}$$
+      $$Q_2(\theta|\theta_0) = \sum^T_{i=1} \sum^N_{j=1} \{ \sum_{q^T_1}P(q^T_1,o^T_1|\theta_0)\sum^T_{t=1}N_t(q_t) \} \delta_{q_t,i}\delta_{q_{t+1},i}$$
+      可以注意到$Q_1(\theta|\theta_0)$只包含高斯参数，$Q_2(\theta|\theta_0)$只包含马尔可夫参数。因此在优化阶段可以分开求参数最大化。
+      GMM-HMM中的参数为已知。其中GMM-HMM的后验概率状态转移概率为：  
+        $$\xi_t(i,j) = \frac{\alpha_t(i)\beta_{t+1}(j)a_{ij}exp(N_{t+1}(j))}{P(o^T_1|\theta_0)}$$
+      后验概率占用概率可以通过对$\xi_t(i,j)$在所有的重点状态$j$上求和得到：
+        $$\gamma_t(i) = \sum^N_{j=1}\xi_t(i,j)$$
+    #### M-step:  
+      M步的作用是求最大化，GMM参数的最大化通过$Q_1(\theta|\theta_0)$来求，HMM参数的最大化通过$Q_2(\theta|\theta_0)$来求。  
+      HMM转移概率的重估计通过令$\frac{\partial{Q_2}}{\partial{a_{i,j}}} = 0$时期服从约束条件$\sum^N_{j=1}a_{i,j}=1$，使用拉格朗日乘子法得到：
+      $$\hat a_{i,j} = \frac{\sum^{T-1}_{t=1}\xi_t(i,j)}{\sum^{T-1}_{t=1}\gamma_t(i)}$$
+      GMM中的协方差重估计公式可以通过接下列方程$\frac{\partial Q_1}{\partial\Sigma_i} = 0$得到。  
+
   + 怎么使用？  
- 
+      HMM解决的问题是给定一组观察序列$o^T_1 = o_1, o_2, ..., o_T$情况下，高效找到最优HMM状态序列。这是一个T阶路径寻找优化问题，可以每次选择每时刻最可能的节点，但那样局部最优效果较差，因此一般使用动态规划算法求解。在此类问题中DP算法也被称为维特比算法，通常使用令牌传递算法来实现。  
+      令$\delta_i(t)$为部分观察序列$o^t_1$到达时间$t$，同时HMM状态序列在该时刻处在状态$i$时的联合似然最大值为：
+        $$\delta_i(t) = \mathop{max}\limits_{q_1,q_2,...,q_{t-1}}P(o_1^t,q^{t-1}_1,q_t=i)$$
+      其状态转移公式为：
+        $$\delta_j(t+1) = \mathop{max}\limits_{i}a_{ij}b_j(o_{t+1})$$
 
 ## 讨论：
-# DNN-HMM
+  GMM-HMM是个统计模型，其描述了两个互相依赖的随机过程：可观测过程(观测序列假设由GMM生成)，隐藏的马尔科夫过程。另外GMM-HMM引入了上下文依赖状态，主要目的是希望每个状态的语音特征向量的统计特征更相似。 
+  但是HMM也存在很多缺点，例如，每个HMM状态上的语音数据的时间独立性假设、缺少声学特征和语音产生方式(说话速度和风格)之间的严格相关
+
+# 4. DNN-HMM
 ## 原理：
+  深度神经网络（[DNN](https://en.wikipedia.org/wiki/Deep_learning)）是一种在输入层和输出层之间具有多层结构的人工神经网络（ANN）。DNN能学习到深层非线性特征变换，而且能利用帧的上下文信息，这些都是GMM不能做到的。而且随着层数变深并且利用聚类后的状态可以得到较大的性能提升。在ASR任务中DNN输入为语音特征向量，输出为每个状态的分类概率(后验概率)，为了得到HMM需要的似然度，需要将其除以每个状态的先验概率。
 ## 建模：
++ 目标是什么？
+  目标仍旧是$W^* = argmax{P(s|w)P(w)}$，由于HMM隐藏状态的存在，因此$P(s|w)$如下表示：
+    $$P(s|w) = \sum_qp(s,q|w)p(q|w) \\
+    \approx max\, \pi(q_0)\Pi^T_{t = 0}a_{q_{t-1}q_t} \Pi^T_{t=1}p(q_t|x_t)/p(q_t)$$
+  其中$p(q_t|x_t)$是DNN计算得出的后验概率，$p(q_t)$是状态的先验概率，$\pi (q_0),\, a_{q_{t-1}q_t}$分别是HMM的初始状态和状态转移概率。
++ 如何训练？
+  类似于GMM-HMM，DNN-HMM也可以使用嵌入式维特比算法进行训练。为了识别性能一般使用绑定后的三音素状态作为神经网络的输出节点，因此DNN-HMM依赖于GMM-HMM对齐之后的状态，在这里将HMM的状态进行聚类得到聚类前后的状态映射关系，进而得到特征向量对应和聚类后状态的映射关系。用特征向量作为输入状态编号作为标签训练DNN。训练准则包括真级别的交叉熵、均方误差、状态级最小贝叶斯风险、最小音素误差、句子级别的最大互信息等。    
+  HMM的训练跟上一节类似，使用Baum-Welch算法。  
+
 ## 讨论：
-# DNN-CTC
+  DNN能学习到深层非线性特征变换，而且能利用帧的上下文信息，而且随着层数变深并且利用聚类后的状态可以得到较大的性能提升。  
+  但是DNN仍然摆脱不了GMM-HMM，整个流程依然相当复杂。  
+  - 网络层数
+  - 跳帧不跳帧
+  - 单音素三音素
+  - 训练加速
+  - 推理加速
+  - 区分训练
+  - 训练准则
+  - 特征选择
+  - 说话人鲁棒
+  - 环境鲁棒
+
+# 5. DNN-CTC
 ## 原理：
+  + 定义：
+    [connectionist temporal classification](https://www.cs.toronto.edu/~graves/icml_2006.pdf)，CTC是一种神经网络输出和相关评分函数，由Alex Graves提出用于训练递归神经网络（RNN），以处理时序可变的序列问题。 
+  + 形式化：
+    跟前面保持一致，假设长度为D的语音/特征序列为$S_D$，对应的单词/音素序列$W_L$，字典为$D_N$。每一帧输入都会输出对应所有音素\字符的概率，在这个$D*L$的概率表中找出一条概率最大的路径。假设每个时间片的输出是相互独立的，则路径的后验概率是每个时间片概率的累积，最大似然估计。  
+    $$W^* = P(W|S) = \Pi^D_{d=1} p(d_i | s_d)$$
+    $$W^* = \mathop{argmax} P(W|S) = \Pi^D_{d=1} \mathop{max}p(d_i | s_d)$$
+    根据上式得到最佳路径，合并重复的字符得到最终的单词/音素序列$W_L$，但是由于一些单词或者字符本身就是重复的如果直接合并的话会造成误伤，因此ctc在字典$D_N$中引入空值，然后根据空值将原始序列切分成M个片段，假设片段长度为T。
+    $$W^* = \mathop{argmax} P(W|S) = \sum^M_{m-1} \Pi^D_{d=1} \mathop{max}p(d_i | s_t)$$
+ 
 ## 建模：
+  + 目标是什么？  
+    根据原理可以得知目标为$\sum^M_{m-1} \Pi^D_{d=1} \mathop{max}p(d_i | s_t)$。根据公式每个片段的路径条数为$T^M$条，这意味这每个片段要根据输入序列和参数求$T^N$次结果，计算量非常大。而当前路径依赖前一路径，可以利用动态规划思想求得，引出前向后向算法。
+  + 如何建模：
+    
+
 ## 讨论：
 # TRANSFORMER
 ## 原理：
 ## 建模：
 ## 讨论：
 # 讨论
+
+# 引用
+[1]
+[2]
+[3]
+[4]
+[5.1] Graves A, Fernández S, Gomez F, et al. Connectionist temporal classification: labelling unsegmented sequence data with recurrent neural networks[C]//Proceedings of the 23rd international conference on Machine learning. 2006: 369-376.  
+
